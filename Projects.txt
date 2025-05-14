@@ -1,0 +1,134 @@
+🏦 What You're Building:
+A Virtual Bank Simulation App that includes:
+
+✅ User bank account + virtual funds
+✅ Credit card with spending limit
+✅ Debit card with balance
+✅ Temp card system for secure purchase
+✅ Purchase catalog (realistic values)
+✅ Subscription/EMI simulation
+✅ Auth, API, and full UI
+✅ All using Supabase + Next.js + Tailwind (or tech of your choice)
+
+💡 What This Shows to Recruiters
+Skill Area	Proof from Your Project
+Full-stack architecture	Auth, DB, API, frontend, logic
+Fintech simulation	Credit/debit flow, virtual cards, fraud controls
+Cloud-native development	Supabase, Postgres, Auth, hosting
+Modern UI/UX	Real-world flow, cards, catalogs, dashboards
+Security awareness	Temp card system, one-time use, fraud protection
+Real-world thinking	Purchases, limits, subscriptions, analytics
+
+This is not just "another app" — it simulates a real product environment.
+
+✅ Features & Modules to Build
+Here’s the high-level structure of your app:
+
+👤 1. User Management
+Supabase Auth (email/GitHub login)
+
+Profile page with name, email, account summary
+
+🏦 2. Bank Account System (Simulated)
+Users get 1 bank account (auto-created)
+
+Default balance: $0
+
+User can “add funds” up to $500,000
+
+Show available balance
+
+Add transaction history table
+
+💳 3. Credit Card Simulation
+User gets 1 virtual credit card (limit: $100,000)
+
+UI shows available credit, used credit
+
+Payments reduce credit; repayments increase it
+
+Add repay button to simulate monthly payment
+
+💼 4. Default Debit/Credit Cards (Inactive)
+Display card details
+
+Not usable directly (security)
+
+Temp cards will be generated from these
+
+🔐 5. Temp Card Generator (Core Logic)
+Choose: Credit or Debit source
+
+Choose: One-time use / Subscription
+
+Set:
+
+Label
+
+Amount limit
+
+Expiry time or number of uses
+
+Generate masked card (number, CVV, expiry)
+
+Save to DB, show in dashboard
+
+🧾 6. Purchase Catalog
+Show realistic items (MacBook, Netflix, Spotify, Gym, iPhone)
+
+Use fixed pricing
+
+Allow:
+
+One-time purchases
+
+Monthly subscriptions
+
+EMI-based purchases
+
+🧾 7. Checkout Flow
+Input temp card
+
+Backend validates:
+
+Is it expired?
+
+Is amount under limit?
+
+Is source balance available?
+
+If valid:
+
+Reduce source balance/credit
+
+Mark card used
+
+Store transaction log
+
+🧾 8. Transaction + Subscription Logs
+/history page
+
+Filter by:
+
+Type: subscription / one-time
+
+Source: debit / credit
+
+Status: success / failed / expired
+
+📊 9. Dashboard Analytics
+Pie chart: spending by category
+
+Bar chart: usage over time
+
+Show credit score mock (based on spending behavior)
+
+🛠️ Tech Stack Recommendation
+Layer	Tech
+Frontend	Next.js + TypeScript + Tailwind
+Backend API	API routes (or tRPC) + Supabase SDK
+Auth	Supabase Auth
+DB	Supabase Postgres
+Styling	Tailwind CSS
+Charting	recharts, chart.js, or nivo
+Deployment	Vercel (Frontend), Supabase (Backend)
