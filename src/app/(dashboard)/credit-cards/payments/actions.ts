@@ -37,7 +37,7 @@ export async function makePayment({ cardId, billId, amount }: PaymentData) {
     }
 
     // Start a transaction
-    const { data: transaction, error: transactionError } = await supabase
+    const { error: transactionError } = await supabase
       .from('transactions')
       .insert({
         user_id: bill.user_id,
@@ -49,8 +49,6 @@ export async function makePayment({ cardId, billId, amount }: PaymentData) {
         merchant_name: 'Credit Card Payment',
         merchant_category: 'Financial Services'
       })
-      .select()
-      .single()
 
     if (transactionError) {
       console.error('Error creating transaction:', transactionError)

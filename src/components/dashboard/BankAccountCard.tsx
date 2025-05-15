@@ -4,7 +4,20 @@ import { useState } from 'react'
 import { addFunds } from '@/app/(dashboard)/dashboard/action'
 import { toast } from 'sonner'
 
-export default function BankAccountCard({ account }: { account: any }) {
+interface BankAccount {
+  id: string
+  account_name: string
+  account_number: string
+  balance: number
+  account_type: string
+  status: string
+}
+
+interface BankAccountCardProps {
+  account: BankAccount
+}
+
+export default function BankAccountCard({ account }: BankAccountCardProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [amount, setAmount] = useState('')
   const [showInput, setShowInput] = useState(false)
@@ -17,8 +30,12 @@ export default function BankAccountCard({ account }: { account: any }) {
       toast.success(`Successfully added $${numAmount.toLocaleString()} to your account`)
       setAmount('')
       setShowInput(false)
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to add funds')
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message || 'Failed to add funds')
+      } else {
+        toast.error('Failed to add funds')
+      }
     } finally {
       setIsLoading(false)
     }

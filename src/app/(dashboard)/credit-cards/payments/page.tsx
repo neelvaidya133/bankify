@@ -112,7 +112,7 @@ export default async function CreditCardPaymentsPage() {
 
         {bills.length === 0 && (
           <div className="text-center py-8 text-gray-600">
-            You don't have any active credit cards.
+            You don&apos;t have any active credit cards.
           </div>
         )}
       </div>

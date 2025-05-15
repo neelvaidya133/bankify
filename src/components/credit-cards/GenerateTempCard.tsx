@@ -46,7 +46,7 @@ export default function GenerateTempCard() {
     try {
       await navigator.clipboard.writeText(text)
       toast.success(`${field} copied to clipboard`)
-    } catch (err) {
+    } catch {
       toast.error('Failed to copy to clipboard')
     }
   }
@@ -138,8 +138,8 @@ export default function GenerateTempCard() {
 
       toast.success('Temporary card generated successfully')
     } catch (error) {
-      console.error('Error generating temporary card:', error instanceof Error ? error.message : error)
-      toast.error(error instanceof Error ? error.message : 'Failed to generate temporary card')
+      console.error('Error generating temporary card:', error)
+      toast.error('Failed to generate temporary card')
     } finally {
       setLoading(false)
     }
@@ -245,7 +245,7 @@ export default function GenerateTempCard() {
                 </div>
               </div>
               <div className="text-sm text-gray-500">
-                This card will expire in 24 hours. Please save these details as they won't be shown again.
+                Don&apos;t forget to save your temporary card details!
               </div>
               <Button 
                 onClick={() => {

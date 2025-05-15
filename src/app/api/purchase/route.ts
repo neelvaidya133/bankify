@@ -60,24 +60,22 @@ export async function POST(request: Request) {
     }
 
     // Create transaction record
-    const { data: transaction, error: transactionError } = await supabase
+    const { error: transactionError } = await supabase
       .from('transactions')
       .insert({
         user_id: user.id,
         card_id: tempCard.main_card_id,
         temp_card_id: tempCard.id,
-        transaction_type: 'withdrawal',
+        transaction_type: 'purchase',
         amount: amount,
         status: 'completed',
         description: `Purchase: ${product.name}`,
         merchant_name: product.name,
         merchant_category: product.category
       })
-      .select()
-      .single()
 
     if (transactionError) {
-      console.error('Transaction error:', transactionError)
+      console.error('Error creating transaction:', transactionError)
       return NextResponse.json({ error: 'Failed to create transaction' }, { status: 500 })
     }
 

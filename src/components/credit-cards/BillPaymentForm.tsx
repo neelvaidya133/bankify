@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { formatCurrency } from '@/utils/format'
+import { formatCurrency } from '@/utils/card-utils'
 import { makePayment } from '@/app/(dashboard)/credit-cards/payments/actions'
 
 interface BillPaymentFormProps {

@@ -1,4 +1,19 @@
-export default function RecentTransactions({ transactions }: { transactions: any[] }) {
+interface Transaction {
+  id: string
+  amount: number
+  transaction_type: string
+  status: string
+  description: string
+  merchant_name: string
+  merchant_category: string
+  created_at: string
+}
+
+interface RecentTransactionsProps {
+  transactions: Transaction[]
+}
+
+export default function RecentTransactions({ transactions }: RecentTransactionsProps) {
   return (
     <div className="space-y-4">
       {transactions?.map((transaction) => (
@@ -10,9 +25,9 @@ export default function RecentTransactions({ transactions }: { transactions: any
             </div>
           </div>
           <div className={`font-medium ${
-            transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'
+            transaction.transaction_type === 'credit' ? 'text-green-600' : 'text-red-600'
           }`}>
-            {transaction.type === 'credit' ? '+' : '-'}${transaction.amount.toFixed(2)}
+            {transaction.transaction_type === 'credit' ? '+' : '-'}${transaction.amount.toFixed(2)}
           </div>
         </div>
       ))}

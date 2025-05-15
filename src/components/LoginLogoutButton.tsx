@@ -1,41 +1,57 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Button } from "./ui/button";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { signout } from "@/lib/auth-actions";
 
-const LoginButton = () => {
-  const [user, setUser] = useState<any>(null);
+interface User {
+  id: string
+  email?: string
+  user_metadata?: {
+    full_name?: string
+  }
+}
+
+interface LoginLogoutButtonProps {
+  user: User | null
+}
+
+const LoginButton = ({ user }: LoginLogoutButtonProps) => {
   const router = useRouter();
   const supabase = createClient();
+
   useEffect(() => {
-    const fetchUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        router.push('/login');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
     };
-    fetchUser();
-  }, []);
+  }, [supabase.auth, router]);
+
+  const handleLogout = async () => {
+    await signout();
+  };
+
   if (user) {
     return (
       <Button
-        onClick={() => {
-          signout();
-          setUser(null);
-        }}
+        onClick={handleLogout}
+        className="text-sm font-medium text-gray-700 hover:text-gray-900"
       >
-        Log out
+        Logout
       </Button>
     );
   }
+
   return (
     <Button
-      variant="outline"
-      onClick={() => {
-        router.push("/login");
-      }}
+      onClick={() => router.push('/login')}
+      className="text-sm font-medium text-gray-700 hover:text-gray-900"
     >
       Login
     </Button>

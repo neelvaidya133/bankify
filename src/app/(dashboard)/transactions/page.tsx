@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useCallback, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
-import { formatCurrency } from '@/utils/format'
+import { formatCurrency } from '@/utils/card-utils'
 import { format } from 'date-fns'
 
 interface Transaction {
@@ -21,6 +22,8 @@ interface Transaction {
 }
 
 export default function TransactionsPage() {
+  const router = useRouter()
+  const supabase = createClient()
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState({
@@ -31,43 +34,31 @@ export default function TransactionsPage() {
   const [sortBy, setSortBy] = useState('date')
   const [sortOrder, setSortOrder] = useState('desc')
 
-  useEffect(() => {
-    fetchTransactions()
-  }, [filter, sortBy, sortOrder])
-
-  const fetchTransactions = async () => {
-    const supabase = createClient()
-    let query = supabase
-      .from('transactions')
-      .select(`
-        *,
-        main_cards (
-          card_number,
-          card_type
-        )
-      `)
-      .order(sortBy === 'date' ? 'created_at' : 'amount', { ascending: sortOrder === 'asc' })
-
-    if (filter.type !== 'all') {
-      query = query.eq('transaction_type', filter.type)
-    }
-    if (filter.status !== 'all') {
-      query = query.eq('status', filter.status)
-    }
-    if (filter.category !== 'all') {
-      query = query.eq('merchant_category', filter.category)
-    }
-
-    const { data, error } = await query
-
-    if (error) {
-      console.error('Error fetching transactions:', error)
+  const fetchTransactions = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      router.push('/login')
       return
     }
 
-    setTransactions(data || [])
-    setLoading(false)
-  }
+    const { data: transactions } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+
+    if (transactions) {
+      setTransactions(transactions)
+      setLoading(false)
+    } else {
+      console.error('Error fetching transactions')
+      setLoading(false)
+    }
+  }, [supabase, router])
+
+  useEffect(() => {
+    fetchTransactions()
+  }, [fetchTransactions])
 
   const getStatusColor = (status: string) => {
     switch (status) {
