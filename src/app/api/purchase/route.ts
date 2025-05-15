@@ -57,6 +57,19 @@ export async function POST(request: Request) {
       if (!bankAccount || bankAccount.balance < amount) {
         return NextResponse.json({ error: 'Insufficient funds in bank account' }, { status: 400 })
       }
+
+      // Update bank account balance for debit card
+      const { error: bankError } = await supabase
+        .from('bank_accounts')
+        .update({
+          balance: bankAccount.balance - amount
+        })
+        .eq('id', mainCard.bank_account_id)
+
+      if (bankError) {
+        console.error('Bank balance update error:', bankError)
+        return NextResponse.json({ error: 'Failed to update bank balance' }, { status: 500 })
+      }
     }
 
     // Create transaction record
@@ -66,7 +79,7 @@ export async function POST(request: Request) {
         user_id: user.id,
         card_id: tempCard.main_card_id,
         temp_card_id: tempCard.id,
-        transaction_type: 'purchase',
+        transaction_type: 'withdrawal',
         amount: amount,
         status: 'completed',
         description: `Purchase: ${product.name}`,
@@ -168,19 +181,6 @@ export async function POST(request: Request) {
           console.error('Bill creation error:', billError)
           return NextResponse.json({ error: 'Failed to create bill' }, { status: 500 })
         }
-      }
-    } else {
-      // Update bank account balance for debit card
-      const { error: bankError } = await supabase
-        .from('bank_accounts')
-        .update({
-          balance: mainCard.bank_accounts.balance - amount
-        })
-        .eq('id', mainCard.bank_account_id)
-
-      if (bankError) {
-        console.error('Bank balance update error:', bankError)
-        return NextResponse.json({ error: 'Failed to update bank balance' }, { status: 500 })
       }
     }
 

@@ -3,12 +3,17 @@ import { Button } from "@/components/ui/button";
 import { signInWithGoogle } from "@/lib/auth-actions";
 import React from "react";
 
-const SignInWithGoogleButton = () => {
+interface SignInWithGoogleButtonProps {
+  disabled?: boolean;
+}
+
+const SignInWithGoogleButton = ({ disabled }: SignInWithGoogleButtonProps) => {
   return (
     <Button
       type="button"
       variant="outline"
       className="w-full"
+      disabled={disabled}
       onClick={() => {
         signInWithGoogle();
       }}

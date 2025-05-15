@@ -3,8 +3,8 @@
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 
-const MAX_BALANCE = 10000000 // 10 million
-const MAX_ADDITION = 100000 // 100k
+const MAX_BALANCE = 1000000000 // 1 billion
+const MAX_ADDITION = 10000000 // 10 million
 
 export async function addFunds(amount: number) {
   const supabase = await createClient()

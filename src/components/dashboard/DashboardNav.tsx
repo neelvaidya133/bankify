@@ -5,7 +5,8 @@ import { User } from '@supabase/supabase-js'
 import { signout } from '@/lib/auth-actions'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { CreditCard, History } from 'lucide-react'
+import { CreditCard, History, LogOut } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 export default function DashboardNav({ user }: { user: User }) {
   const pathname = usePathname()
@@ -76,9 +77,10 @@ export default function DashboardNav({ user }: { user: User }) {
           <div className="flex items-center space-x-4">
             <span className="text-gray-700">{user.email}</span>
             <form action={signout}>
-              <button className="text-gray-700 hover:text-gray-900">
+              <Button variant="ghost" size="sm" className="gap-2">
+                <LogOut className="h-4 w-4" />
                 Sign Out
-              </button>
+              </Button>
             </form>
           </div>
         </div>

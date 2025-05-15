@@ -19,6 +19,15 @@ interface Transaction {
     card_number: string
     card_type: string
   }
+  secondary_cards?: {
+    card_number: string
+    card_type: string
+  }
+  temp_cards?: {
+    card_number: string
+    expiry_date: string
+    status: string
+  }
 }
 
 export default function TransactionsPage() {
@@ -26,6 +35,8 @@ export default function TransactionsPage() {
   const supabase = createClient()
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
   const [filter, setFilter] = useState({
     type: 'all',
     status: 'all',
@@ -34,6 +45,8 @@ export default function TransactionsPage() {
   const [sortBy, setSortBy] = useState('date')
   const [sortOrder, setSortOrder] = useState('desc')
 
+  const ITEMS_PER_PAGE = 10
+
   const fetchTransactions = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
@@ -41,11 +54,34 @@ export default function TransactionsPage() {
       return
     }
 
+    // First, get total count for pagination
+    const { count } = await supabase
+      .from('transactions')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+
+    if (count !== null) {
+      setTotalPages(Math.ceil(count / ITEMS_PER_PAGE))
+    }
+
+    // Then fetch paginated data
     const { data: transactions } = await supabase
       .from('transactions')
-      .select('*')
+      .select(`
+        *,
+        main_cards:card_id (
+          card_number,
+          card_type
+        ),
+        temp_cards:temporary_cards (
+          card_number,
+          expiry_date,
+          status
+        )
+      `)
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
+      .range((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE - 1)
 
     if (transactions) {
       setTransactions(transactions)
@@ -54,11 +90,15 @@ export default function TransactionsPage() {
       console.error('Error fetching transactions')
       setLoading(false)
     }
-  }, [supabase, router])
+  }, [supabase, router, currentPage])
 
   useEffect(() => {
     fetchTransactions()
   }, [fetchTransactions])
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -147,55 +187,127 @@ export default function TransactionsPage() {
       ) : transactions.length === 0 ? (
         <div className="text-center py-8 text-gray-500">No transactions found</div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Card</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {transactions.map((transaction) => (
-                <tr key={transaction.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {format(new Date(transaction.created_at), 'MMM d, yyyy HH:mm')}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{transaction.description}</div>
-                    <div className="text-sm text-gray-500">{transaction.merchant_name}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {transaction.main_cards.card_type === 'credit' ? 'Credit' : 'Debit'}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      **** **** **** {transaction.main_cards.card_number.slice(-4)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {transaction.merchant_category}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`text-sm font-medium ${getTransactionTypeColor(transaction.transaction_type)}`}>
-                      {transaction.transaction_type === 'withdrawal' ? '-' : '+'}
-                      {formatCurrency(transaction.amount)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`text-sm font-medium ${getStatusColor(transaction.status)}`}>
-                      {transaction.status}
-                    </span>
-                  </td>
+        <>
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Card</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {transactions.map((transaction) => (
+                  <tr key={transaction.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {format(new Date(transaction.created_at), 'MMM d, yyyy HH:mm')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{transaction.description}</div>
+                      <div className="text-sm text-gray-500">{transaction.merchant_name}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {transaction.transaction_type === 'payment' ? (
+                        <>
+                          <div className="text-sm text-gray-900">
+                            Debit Card
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            Bill Payment
+                          </div>
+                        </>
+                      ) : transaction.temp_cards ? (
+                        <>
+                          <div className="text-sm text-gray-900">
+                            Temporary Card
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            **** **** **** {transaction.temp_cards.card_number.slice(-4)}
+                          </div>
+                          <div className="text-xs text-gray-400">
+                            Expires: {transaction.temp_cards.expiry_date}
+                          </div>
+                        </>
+                      ) : transaction.main_cards ? (
+                        <>
+                          <div className="text-sm text-gray-900">
+                            {transaction.main_cards.card_type}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            **** **** **** {transaction.main_cards.card_number.slice(-4)}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-sm text-gray-500">N/A</div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {transaction.merchant_category}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`text-sm font-medium ${getTransactionTypeColor(transaction.transaction_type)}`}>
+                        {transaction.transaction_type === 'withdrawal' ? '-' : '+'}
+                        {formatCurrency(transaction.amount)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`text-sm font-medium ${getStatusColor(transaction.status)}`}>
+                        {transaction.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination Controls */}
+          <div className="mt-4 flex justify-center items-center space-x-2">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className={`px-3 py-1 rounded ${
+                currentPage === 1
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-blue-500 text-white hover:bg-blue-600'
+              }`}
+            >
+              Previous
+            </button>
+            
+            <div className="flex items-center space-x-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  className={`px-3 py-1 rounded ${
+                    currentPage === page
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {page}
+                </button>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </div>
+
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className={`px-3 py-1 rounded ${
+                currentPage === totalPages
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-blue-500 text-white hover:bg-blue-600'
+              }`}
+            >
+              Next
+            </button>
+          </div>
+        </>
       )}
     </div>
   )

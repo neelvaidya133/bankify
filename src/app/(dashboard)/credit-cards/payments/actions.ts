@@ -36,6 +36,23 @@ export async function makePayment({ cardId, billId, amount }: PaymentData) {
       return { success: false, error: 'Payment amount exceeds remaining balance' }
     }
 
+    // Get user's bank account balance
+    const { data: bankAccount, error: bankError } = await supabase
+      .from('bank_accounts')
+      .select('balance')
+      .eq('user_id', bill.user_id)
+      .single()
+
+    if (bankError || !bankAccount) {
+      console.error('Error fetching bank account:', bankError)
+      return { success: false, error: 'Failed to fetch bank account details' }
+    }
+
+    // Check if user has sufficient funds
+    if (bankAccount.balance < amount) {
+      return { success: false, error: 'Insufficient funds in bank account' }
+    }
+
     // Start a transaction
     const { error: transactionError } = await supabase
       .from('transactions')
@@ -53,6 +70,19 @@ export async function makePayment({ cardId, billId, amount }: PaymentData) {
     if (transactionError) {
       console.error('Error creating transaction:', transactionError)
       return { success: false, error: 'Failed to create transaction' }
+    }
+
+    // Update bank account balance
+    const { error: bankUpdateError } = await supabase
+      .from('bank_accounts')
+      .update({
+        balance: bankAccount.balance - amount
+      })
+      .eq('user_id', bill.user_id)
+
+    if (bankUpdateError) {
+      console.error('Error updating bank balance:', bankUpdateError)
+      return { success: false, error: 'Failed to update bank balance' }
     }
 
     // Update the bill's paid amount

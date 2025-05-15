@@ -40,7 +40,17 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  await supabase.auth.getSession()
+  const { data: { session } } = await supabase.auth.getSession()
+
+  // If user is not signed in and the current path is not /, redirect to /
+  if (!session && request.nextUrl.pathname !== '/') {
+    return NextResponse.redirect(new URL('/', request.url))
+  }
+
+  // If user is signed in and the current path is /, redirect to /dashboard
+  if (session && request.nextUrl.pathname === '/') {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
 
   return response
 }

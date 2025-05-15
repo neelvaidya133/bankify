@@ -55,8 +55,14 @@ export async function signup(formData: FormData) {
 
 export async function signout() {
   const supabase = await createClient();
-  await supabase.auth.signOut();
-  redirect("/login");
+  const { error } = await supabase.auth.signOut();
+  if (error) {
+    console.error('Error signing out:', error);
+    redirect("/error");
+  }
+
+  revalidatePath("/", "layout");
+  redirect("/");
 }
 
 export async function signInWithGoogle() {
@@ -64,7 +70,6 @@ export async function signInWithGoogle() {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
       queryParams: {
         access_type: "offline",
         prompt: "consent",
@@ -73,8 +78,9 @@ export async function signInWithGoogle() {
   });
 
   if (error) {
-    throw error;
+    console.log(error);
+    redirect("/error");
   }
 
-  return data;
+  redirect(data.url);
 }
