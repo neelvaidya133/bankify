@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import CardsDisplay from './components/CardsDisplay'
+import GenerateTempCard from '@/components/credit-cards/GenerateTempCard'
 
 export default async function CardsPage() {
   const supabase = await createClient()
@@ -18,8 +19,11 @@ export default async function CardsPage() {
     .order('card_type')
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Your Cards</h1>
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Your Cards</h1>
+        <GenerateTempCard />
+      </div>
       <CardsDisplay cards={cards || []} />
     </div>
   )

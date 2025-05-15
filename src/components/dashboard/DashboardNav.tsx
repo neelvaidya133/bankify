@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { User } from '@supabase/supabase-js'
 import { signout } from '@/lib/auth-actions'
 import { usePathname } from 'next/navigation'
+import { cn } from '@/lib/utils'
+import { CreditCard, History } from 'lucide-react'
 
 export default function DashboardNav({ user }: { user: User }) {
   const pathname = usePathname()
@@ -38,6 +40,36 @@ export default function DashboardNav({ user }: { user: User }) {
                 }`}
               >
                 Cards
+              </Link>
+              <Link
+                href="/credit-cards/payments"
+                className={cn(
+                  'flex items-center gap-3 rounded-lg px-3 py-2 text-gray-500 transition-all hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50',
+                  pathname === '/credit-cards/payments' && 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-50'
+                )}
+              >
+                <CreditCard className="h-4 w-4" />
+                Credit Card Payments
+              </Link>
+              <Link
+                href="/transactions"
+                className={cn(
+                  'flex items-center gap-3 rounded-lg px-3 py-2 text-gray-500 transition-all hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50',
+                  pathname === '/transactions' && 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-50'
+                )}
+              >
+                <History className="h-4 w-4" />
+                Transactions
+              </Link>
+              <Link 
+                href="/catalog" 
+                className={`px-3 py-2 rounded-md ${
+                  isActive('/catalog') 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'text-gray-700 hover:text-gray-900'
+                }`}
+              >
+                Catalog
               </Link>
             </div>
           </div>
