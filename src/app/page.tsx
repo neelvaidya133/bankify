@@ -1,30 +1,32 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/utils/supabase/client'
-import { LoginForm } from './(auth)/login/components/loginForm'
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
+import { LoginForm } from "./(auth)/login/components/loginForm";
 
 export default function Home() {
-  const router = useRouter()
-  const supabase = createClient()
-  const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter();
+  const supabase = createClient();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const checkUser = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser()
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (user) {
-          router.push('/dashboard')
+          router.push("/dashboard");
         }
       } catch (error) {
-        console.error('Error checking user:', error)
+        console.error("Error checking user:", error);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
-    checkUser()
-  }, [router, supabase.auth])
+    };
+    checkUser();
+  }, [router, supabase.auth]);
 
   if (isLoading) {
     return (
@@ -34,7 +36,7 @@ export default function Home() {
           <p className="text-sm text-gray-500">Loading...</p>
         </div>
       </main>
-    )
+    );
   }
 
   return (
@@ -43,5 +45,5 @@ export default function Home() {
         <LoginForm />
       </div>
     </main>
-  )
+  );
 }

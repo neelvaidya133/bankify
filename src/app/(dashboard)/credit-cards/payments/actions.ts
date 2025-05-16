@@ -31,8 +31,10 @@ export async function makePayment({ cardId, billId, amount }: PaymentData) {
     }
 
     // Check if payment amount is valid
-    const remainingBalance = bill.statement_amount - bill.paid_amount
-    if (amount > remainingBalance) {
+    const remainingBalance = Number((bill.statement_amount - bill.paid_amount).toFixed(2))
+    const roundedAmount = Number(amount.toFixed(2))
+
+    if (roundedAmount > remainingBalance) {
       return { success: false, error: 'Payment amount exceeds remaining balance' }
     }
 
@@ -49,7 +51,7 @@ export async function makePayment({ cardId, billId, amount }: PaymentData) {
     }
 
     // Check if user has sufficient funds
-    if (bankAccount.balance < amount) {
+    if (bankAccount.balance < roundedAmount) {
       return { success: false, error: 'Insufficient funds in bank account' }
     }
 
@@ -59,7 +61,7 @@ export async function makePayment({ cardId, billId, amount }: PaymentData) {
       .insert({
         user_id: bill.user_id,
         card_id: cardId,
-        amount: amount,
+        amount: roundedAmount,
         transaction_type: 'payment',
         status: 'completed',
         description: 'Credit card bill payment',
@@ -76,7 +78,7 @@ export async function makePayment({ cardId, billId, amount }: PaymentData) {
     const { error: bankUpdateError } = await supabase
       .from('bank_accounts')
       .update({
-        balance: bankAccount.balance - amount
+        balance: Number((bankAccount.balance - roundedAmount).toFixed(2))
       })
       .eq('user_id', bill.user_id)
 
@@ -86,11 +88,12 @@ export async function makePayment({ cardId, billId, amount }: PaymentData) {
     }
 
     // Update the bill's paid amount
+    const newPaidAmount = Number((bill.paid_amount + roundedAmount).toFixed(2))
     const { error: updateError } = await supabase
       .from('credit_card_bills')
       .update({
-        paid_amount: bill.paid_amount + amount,
-        status: bill.paid_amount + amount >= bill.statement_amount ? 'paid' : 'unpaid'
+        paid_amount: newPaidAmount,
+        status: newPaidAmount >= bill.statement_amount ? 'paid' : 'unpaid'
       })
       .eq('id', billId)
 
@@ -115,7 +118,7 @@ export async function makePayment({ cardId, billId, amount }: PaymentData) {
     const { error: cardError } = await supabase
       .from('main_cards')
       .update({
-        available_credit: card.available_credit + amount
+        available_credit: Number((card.available_credit + roundedAmount).toFixed(2))
       })
       .eq('id', cardId)
 
