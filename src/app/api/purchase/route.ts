@@ -121,59 +121,73 @@ export async function POST(request: Request) {
       // Set due date to the 15th of next month
       const dueDate = new Date(today.getFullYear(), today.getMonth() + 1, 15)
 
-      console.log('Bill period dates:', {
-        firstDay: firstDayOfMonth.toISOString(),
-        lastDay: lastDayOfMonth.toISOString(),
-        dueDate: dueDate.toISOString()
-      })
+      // Format dates as YYYY-MM-DD for PostgreSQL
+      const formatDate = (date: Date) => {
+        return date.toISOString().split('T')[0]
+      }
 
-      const { data: currentBill, error: billQueryError } = await supabase
+      // Get all bills for this month
+      const { data: existingBills, error: billsQueryError } = await supabase
         .from('credit_card_bills')
         .select('*')
         .eq('card_id', tempCard.main_card_id)
-        .gte('statement_start', firstDayOfMonth.toISOString())
-        .lte('statement_end', lastDayOfMonth.toISOString())
-        .single()
+        .gte('statement_start', formatDate(firstDayOfMonth))
+        .lte('statement_end', formatDate(lastDayOfMonth))
 
-      if (billQueryError) {
-        console.error('Error querying for existing bill:', billQueryError)
+      if (billsQueryError) {
+        console.error('Error querying for existing bills:', billsQueryError)
+        return NextResponse.json({ error: 'Failed to query bills' }, { status: 500 })
       }
 
-      if (currentBill) {
-        console.log('Updating existing bill:', {
-          billId: currentBill.id,
-          currentAmount: currentBill.statement_amount,
-          newAmount: currentBill.statement_amount + amount
-        })
+      if (existingBills && existingBills.length > 0) {
+        // Find the most recent unpaid bill or create a new one
+        const unpaidBill = existingBills.find(bill => bill.status === 'unpaid')
 
-        const { error: billError } = await supabase
-          .from('credit_card_bills')
-          .update({
-            statement_amount: currentBill.statement_amount + amount
-          })
-          .eq('id', currentBill.id)
+        if (unpaidBill) {
+          // Update the existing unpaid bill
+          const { error: billError } = await supabase
+            .from('credit_card_bills')
+            .update({
+              statement_amount: unpaidBill.statement_amount + amount
+            })
+            .eq('id', unpaidBill.id)
 
-        if (billError) {
-          console.error('Bill update error:', billError)
-          return NextResponse.json({ error: 'Failed to update bill' }, { status: 500 })
+          if (billError) {
+            console.error('Bill update error:', billError)
+            return NextResponse.json({ error: 'Failed to update bill' }, { status: 500 })
+          }
+        } else {
+          // Create new bill if all existing bills are paid
+          const { error: billError } = await supabase
+            .from('credit_card_bills')
+            .insert({
+              card_id: tempCard.main_card_id,
+              user_id: user.id,
+              statement_start: formatDate(firstDayOfMonth),
+              statement_end: formatDate(lastDayOfMonth),
+              due_date: formatDate(dueDate),
+              statement_amount: amount,
+              paid_amount: 0,
+              status: 'unpaid'
+            })
+
+          if (billError) {
+            console.error('Bill creation error:', billError)
+            return NextResponse.json({ error: 'Failed to create bill' }, { status: 500 })
+          }
         }
       } else {
-        console.log('Creating new bill:', {
-          cardId: tempCard.main_card_id,
-          userId: user.id,
-          amount,
-          dueDate: dueDate.toISOString()
-        })
-
+        // Create new bill if no bills exist for this month
         const { error: billError } = await supabase
           .from('credit_card_bills')
           .insert({
             card_id: tempCard.main_card_id,
             user_id: user.id,
-            statement_start: firstDayOfMonth.toISOString(),
-            statement_end: lastDayOfMonth.toISOString(),
-            due_date: dueDate.toISOString(),
+            statement_start: formatDate(firstDayOfMonth),
+            statement_end: formatDate(lastDayOfMonth),
+            due_date: formatDate(dueDate),
             statement_amount: amount,
+            paid_amount: 0,
             status: 'unpaid'
           })
 

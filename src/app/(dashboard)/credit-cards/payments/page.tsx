@@ -28,12 +28,11 @@ export default async function CreditCardPaymentsPage() {
         .from("credit_card_bills")
         .select("*")
         .eq("card_id", card.id)
-        .order("statement_start", { ascending: false })
-        .limit(1);
+        .order("statement_start", { ascending: false });
 
       return {
         card,
-        bill: cardBills?.[0],
+        bills: cardBills || [],
       };
     })
   );
@@ -43,7 +42,7 @@ export default async function CreditCardPaymentsPage() {
       <h1 className="text-2xl font-bold">Credit Card Payments</h1>
 
       <div className="grid gap-6">
-        {bills.map(({ card, bill }) => (
+        {bills.map(({ card, bills }) => (
           <div key={card.id} className="bg-white rounded-lg shadow p-6">
             <div className="flex justify-between items-start mb-4">
               <div>
@@ -60,63 +59,74 @@ export default async function CreditCardPaymentsPage() {
               </div>
             </div>
 
-            {bill ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Statement Period</p>
-                    <p className="font-medium">
-                      {new Date(bill.statement_start).toLocaleDateString()} -{" "}
-                      {new Date(bill.statement_end).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Due Date</p>
-                    <p className="font-medium">
-                      {new Date(bill.due_date).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Statement Amount</p>
-                    <p className="text-lg font-semibold">
-                      {formatCurrency(bill.statement_amount)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Paid Amount</p>
-                    <p className="text-lg font-semibold">
-                      {formatCurrency(bill.paid_amount)}
-                    </p>
-                  </div>
-                </div>
-
-                {bill.paid_amount < bill.statement_amount && (
-                  <div className="mt-4">
-                    <BillPaymentForm
-                      cardId={card.id}
-                      billId={bill.id}
-                      amount={bill.statement_amount}
-                      paidAmount={bill.paid_amount}
-                    />
-                  </div>
-                )}
-
-                {bill.paid_amount >= bill.statement_amount && (
-                  <div className="mt-4 p-4 bg-green-50 text-green-700 rounded-md">
-                    This bill has been paid in full.
-                  </div>
-                )}
-
-                {new Date(bill.due_date) < new Date() &&
-                  bill.paid_amount < bill.statement_amount && (
-                    <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-md">
-                      This bill is overdue. Please make a payment as soon as
-                      possible.
+            {bills.length > 0 ? (
+              <div className="space-y-6">
+                {bills.map((bill) => (
+                  <div
+                    key={bill.id}
+                    className="border-t pt-4 first:border-t-0 first:pt-0"
+                  >
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-gray-600">
+                          Statement Period
+                        </p>
+                        <p className="font-medium">
+                          {new Date(bill.statement_start).toLocaleDateString()}{" "}
+                          - {new Date(bill.statement_end).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Due Date</p>
+                        <p className="font-medium">
+                          {new Date(bill.due_date).toLocaleDateString()}
+                        </p>
+                      </div>
                     </div>
-                  )}
+
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                      <div>
+                        <p className="text-sm text-gray-600">
+                          Statement Amount
+                        </p>
+                        <p className="text-lg font-semibold">
+                          {formatCurrency(bill.statement_amount)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Paid Amount</p>
+                        <p className="text-lg font-semibold">
+                          {formatCurrency(bill.paid_amount)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {bill.paid_amount < bill.statement_amount && (
+                      <div className="mt-4">
+                        <BillPaymentForm
+                          cardId={card.id}
+                          billId={bill.id}
+                          amount={bill.statement_amount}
+                          paidAmount={bill.paid_amount}
+                        />
+                      </div>
+                    )}
+
+                    {bill.paid_amount >= bill.statement_amount && (
+                      <div className="mt-4 p-4 bg-green-50 text-green-700 rounded-md">
+                        This bill has been paid in full.
+                      </div>
+                    )}
+
+                    {new Date(bill.due_date) < new Date() &&
+                      bill.paid_amount < bill.statement_amount && (
+                        <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-md">
+                          This bill is overdue. Please make a payment as soon as
+                          possible.
+                        </div>
+                      )}
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="text-center py-4 text-gray-600">

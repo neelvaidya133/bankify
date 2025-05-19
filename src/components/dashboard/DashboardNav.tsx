@@ -5,7 +5,7 @@ import { User } from "@supabase/supabase-js";
 import { signout } from "@/lib/auth-actions";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { CreditCard, History, LogOut, Menu, X } from "lucide-react";
+import { CreditCard, History, LogOut, Menu, X, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
@@ -27,6 +27,11 @@ export default function DashboardNav({ user }: { user: User }) {
       href: "/transactions",
       label: "Transactions",
       icon: <History className="h-4 w-4" />,
+    },
+    {
+      href: "/transfer",
+      label: "Send Money",
+      icon: <Send className="h-4 w-4" />,
     },
     { href: "/catalog", label: "Catalog" },
   ];
