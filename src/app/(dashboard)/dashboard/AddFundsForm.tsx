@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { addFunds } from './action'
 import { toast } from 'sonner'
 
-const MAX_ADDITION = 100000 // 100k CAD
+const MAX_ADDITION = 10000000 // 10 million CAD
 
 export default function AddFundsForm() {
   const [amount, setAmount] = useState('')

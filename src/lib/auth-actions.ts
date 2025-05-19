@@ -57,11 +57,12 @@ export async function signout() {
   const supabase = await createClient();
   const { error } = await supabase.auth.signOut();
   if (error) {
-    console.log(error);
+    console.error('Error signing out:', error);
     redirect("/error");
   }
 
-  redirect("/logout");
+  revalidatePath("/", "layout");
+  redirect("/");
 }
 
 export async function signInWithGoogle() {

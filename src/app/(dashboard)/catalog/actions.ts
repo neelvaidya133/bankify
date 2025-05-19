@@ -50,7 +50,7 @@ export async function makePurchase({ productId, cardId, amount }: PurchaseParams
     }
 
     // Create transaction record
-    const { data: transaction, error: transactionError } = await supabase
+    const {  error: transactionError } = await supabase
       .from('transactions')
       .insert({
         user_id: user.id,

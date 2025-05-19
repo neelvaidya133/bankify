@@ -1,13 +1,23 @@
 'use client';
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { signout } from '@/lib/auth-actions'
 
-const LogoutPage =  () => {
-    const router = useRouter();
-    useEffect(() => {
-        setTimeout(()=> router.push("/"), 2000);
-    }, []);
-  return <div>You have logged out... redirecting in a sec.</div>;
-};
+export default function LogoutPage() {
+  const router = useRouter()
 
-export default LogoutPage;
+  useEffect(() => {
+    const handleLogout = async () => {
+      await signout()
+      router.push('/login')
+    }
+
+    handleLogout()
+  }, [router])
+
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <p>Logging out...</p>
+    </div>
+  )
+}

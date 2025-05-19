@@ -31,38 +31,69 @@ export async function makePayment({ cardId, billId, amount }: PaymentData) {
     }
 
     // Check if payment amount is valid
-    const remainingBalance = bill.statement_amount - bill.paid_amount
-    if (amount > remainingBalance) {
+    const remainingBalance = Number((bill.statement_amount - bill.paid_amount).toFixed(2))
+    const roundedAmount = Number(amount.toFixed(2))
+
+    if (roundedAmount > remainingBalance) {
       return { success: false, error: 'Payment amount exceeds remaining balance' }
     }
 
+    // Get user's bank account balance
+    const { data: bankAccount, error: bankError } = await supabase
+      .from('bank_accounts')
+      .select('balance')
+      .eq('user_id', bill.user_id)
+      .single()
+
+    if (bankError || !bankAccount) {
+      console.error('Error fetching bank account:', bankError)
+      return { success: false, error: 'Failed to fetch bank account details' }
+    }
+
+    // Check if user has sufficient funds
+    if (bankAccount.balance < roundedAmount) {
+      return { success: false, error: 'Insufficient funds in bank account' }
+    }
+
     // Start a transaction
-    const { data: transaction, error: transactionError } = await supabase
+    const { error: transactionError } = await supabase
       .from('transactions')
       .insert({
         user_id: bill.user_id,
         card_id: cardId,
-        amount: amount,
+        amount: roundedAmount,
         transaction_type: 'payment',
         status: 'completed',
         description: 'Credit card bill payment',
         merchant_name: 'Credit Card Payment',
         merchant_category: 'Financial Services'
       })
-      .select()
-      .single()
 
     if (transactionError) {
       console.error('Error creating transaction:', transactionError)
       return { success: false, error: 'Failed to create transaction' }
     }
 
+    // Update bank account balance
+    const { error: bankUpdateError } = await supabase
+      .from('bank_accounts')
+      .update({
+        balance: Number((bankAccount.balance - roundedAmount).toFixed(2))
+      })
+      .eq('user_id', bill.user_id)
+
+    if (bankUpdateError) {
+      console.error('Error updating bank balance:', bankUpdateError)
+      return { success: false, error: 'Failed to update bank balance' }
+    }
+
     // Update the bill's paid amount
+    const newPaidAmount = Number((bill.paid_amount + roundedAmount).toFixed(2))
     const { error: updateError } = await supabase
       .from('credit_card_bills')
       .update({
-        paid_amount: bill.paid_amount + amount,
-        status: bill.paid_amount + amount >= bill.statement_amount ? 'paid' : 'unpaid'
+        paid_amount: newPaidAmount,
+        status: newPaidAmount >= bill.statement_amount ? 'paid' : 'unpaid'
       })
       .eq('id', billId)
 
@@ -87,7 +118,7 @@ export async function makePayment({ cardId, billId, amount }: PaymentData) {
     const { error: cardError } = await supabase
       .from('main_cards')
       .update({
-        available_credit: card.available_credit + amount
+        available_credit: Number((card.available_credit + roundedAmount).toFixed(2))
       })
       .eq('id', cardId)
 

@@ -1,4 +1,17 @@
-export default function CreditCard({ card }: { card: any }) {
+interface CreditCard {
+  id: string
+  card_name: string
+  card_number: string
+  expiry_date: string
+  available_credit: number
+  status: string
+}
+
+interface CreditCardProps {
+  card: CreditCard
+}
+
+export default function CreditCard({ card }: CreditCardProps) {
   return (
     <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg shadow p-6 text-white">
       <h2 className="text-xl font-semibold mb-4">Credit Card</h2>
